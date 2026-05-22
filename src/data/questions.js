@@ -1,0 +1,20 @@
+import './questions/section-01-respondent-profile.js';
+import './questions/section-02-current-state.js';
+import './questions/section-03-business-scale-growth.js';
+import './questions/section-04-opportunities.js';
+import './questions/section-05-challenges-bottlenecks.js';
+import './questions/section-06-technology-adoption.js';
+import './questions/section-07-policy-regulatory.js';
+import './questions/section-08-sustainability-green.js';
+import './questions/section-09-global-benchmarking.js';
+import './questions/section-10-cold-chain.js';
+import './questions/section-11-workforce-skills.js';
+import './questions/section-12-ecommerce-quick-commerce.js';
+import './questions/section-13-investment-financing.js';
+import './questions/section-14-future-outlook.js';
+import './questions/section-15-strategic-recommendations.js';
+import './surveyData.js';
+
+export const surveyData = window.SURVEY_DATA;
+export const sections = window.SURVEY_DATA?.SECTIONS || [];
+export const questions = window.SURVEY_DATA?.QUESTIONS || {};

@@ -1,0 +1,112 @@
+.hero {
+  min-height: 54vh;
+  display: flex;
+  align-items: center;
+  padding: clamp(3rem, 8vw, 6rem) clamp(1rem, 4vw, 3rem);
+  color: #fff;
+  background:
+    linear-gradient(90deg, rgba(16, 43, 72, 0.92), rgba(16, 43, 72, 0.58)),
+    url('https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=1600&q=80') center / cover;
+}
+
+.hero-content {
+  max-width: 720px;
+}
+
+.hero-eyebrow {
+  margin-bottom: 0.75rem;
+  color: #bfdbfe;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.hero h1 {
+  max-width: 760px;
+  margin-bottom: 1rem;
+  font-size: clamp(2.25rem, 6vw, 4.5rem);
+  line-height: 1;
+}
+
+.hero p {
+  max-width: 620px;
+  font-size: 1.05rem;
+}
+
+.hero-action {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 1.5rem;
+  padding: 0.85rem 1.15rem;
+  color: #102b48;
+  background: #fff;
+  border-radius: 6px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.home-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+  padding: 1.25rem clamp(1rem, 4vw, 3rem);
+  background: #fff;
+  border-bottom: 1px solid #e2e5eb;
+}
+
+.survey-card,
+.progress-widget {
+  padding: 1rem;
+  border: 1px solid #e2e5eb;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.survey-card span,
+.progress-widget-meta {
+  color: #5c5c72;
+  font-size: 0.86rem;
+}
+
+.survey-card strong {
+  display: block;
+  margin: 0.25rem 0;
+  color: #185fa5;
+  font-size: 1.75rem;
+}
+
+.survey-card p {
+  color: #5c5c72;
+  font-size: 0.92rem;
+}
+
+.progress-widget-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.65rem;
+  font-weight: 700;
+}
+
+.progress-widget-track {
+  height: 0.55rem;
+  overflow: hidden;
+  background: #e8f2fc;
+  border-radius: 999px;
+}
+
+.progress-widget-fill {
+  height: 100%;
+  background: #1d9e75;
+}
+
+@media (max-width: 920px) {
+  .home-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .home-summary {
+    grid-template-columns: 1fr;
+  }
+}

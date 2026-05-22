@@ -1,0 +1,6 @@
+﻿window.SURVEY_QUESTION_SECTIONS = window.SURVEY_QUESTION_SECTIONS || {};
+window.SURVEY_QUESTION_SECTIONS[10] = {
+52:{type:'mcq',single:true,label:"How do you assess India's cold chain warehousing infrastructure?",applicability:'ALL',options:['Severely inadequate – large gap vs requirements','Inadequate – growing but far behind demand','Moderate – adequate for current but insufficient for future','Good – reasonably well-developed','Not sure']},
+53:{type:'ranking',label:"Which cold chain segments present the highest investment opportunity in India?",applicability:'ALL',items:['Fruits, vegetables and fresh produce','Processed and packaged food','Pharmaceutical and vaccine cold chain','Dairy and confectionery','Meat, seafood and poultry','Chemical and industrial cold chain','Quick commerce / urban dark store cold chain']},
+54:{type:'mcq',single:true,label:"What are the primary bottlenecks in the development of India's cold chain network?",applicability:'ALL',options:['High capital expenditure and long payback periods','Fragmented demand and small order sizes','High energy costs for refrigerated storage','Limited availability of trained cold chain technicians','Inadequate power reliability in rural markets','Absence of a comprehensive national cold chain policy','All of the above','Other']},
+};

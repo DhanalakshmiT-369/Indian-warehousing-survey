@@ -1,0 +1,8 @@
+﻿window.SURVEY_QUESTION_SECTIONS = window.SURVEY_QUESTION_SECTIONS || {};
+window.SURVEY_QUESTION_SECTIONS[1] = {
+1:{type:'mcq',single:true,label:"Which of the following best describes your organisation's primary role?",applicability:'ALL',options:['Warehouse Operator / 3PL Provider','Manufacturer / FMCG Company','Retail Chain / Modern Trade Company','E-commerce / Quick Commerce Company','Logistics / Transport / Freight Company','Government Body / Regulatory Authority','Technology / Software / Automation Provider','Industry Consultant / Research Expert / Academic','Financial Institution / PE / VC Investor','Other']},
+2:{type:'mcq',single:true,label:"What is the approximate annual revenue / turnover of your organisation?",applicability:'ALL',options:['Less than ₹10 Crore','₹10–₹50 Crore','₹50–₹200 Crore','₹200–₹1,000 Crore','₹1,000–₹5,000 Crore','Above ₹5,000 Crore','Prefer not to disclose']},
+3:{type:'mcq',single:false,label:"In which region(s) does your organisation primarily operate? (Select all that apply)",applicability:'ALL',options:['North India','West India','South India','East India','Central India','North-East India','Pan-India (multiple regions)','Also internationally / global operations'],maxSelect:null},
+4:{type:'mcq',single:true,label:"How many years has your organisation been involved in warehousing / logistics?",applicability:'ALL',options:['Less than 2 years','2–5 years','5–10 years','10–20 years','More than 20 years']},
+5:{type:'mcq',single:true,label:"What is your personal role / designation?",applicability:'ALL',options:['C-Suite / Director / Partner','Vice President / Senior Manager','Manager / Deputy Manager','Policy Officer / Government Official','Independent Consultant / Researcher','Other']},
+};

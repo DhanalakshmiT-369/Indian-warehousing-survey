@@ -1,0 +1,33 @@
+{
+  "name": "india-warehousing-survey",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "jspdf": "^2.5.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "vite": "^6.0.3"
+  },
+  "description": "Interactive stakeholder survey built with React and Vite.",
+  "main": "vite.config.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DhanalakshmiT-369/Indian-warehousing-survey.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/DhanalakshmiT-369/Indian-warehousing-survey/issues"
+  },
+  "homepage": "https://github.com/DhanalakshmiT-369/Indian-warehousing-survey#readme"
+}
