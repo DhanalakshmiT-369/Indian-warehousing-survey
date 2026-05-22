@@ -36,13 +36,132 @@
 .hero-action {
   display: inline-flex;
   align-items: center;
+  border: 0;
   margin-top: 1.5rem;
   padding: 0.85rem 1.15rem;
   color: #102b48;
   background: #fff;
   border-radius: 6px;
+  cursor: pointer;
+  font: inherit;
   font-weight: 700;
   text-decoration: none;
+}
+
+.gate-screen,
+.role-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background:
+    linear-gradient(90deg, rgba(16, 43, 72, 0.9), rgba(16, 43, 72, 0.6)),
+    url('https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=1600&q=80') center / cover;
+}
+
+.role-screen {
+  min-height: calc(100vh - 132px);
+}
+
+.gate-card,
+.role-card {
+  width: min(100%, 520px);
+  padding: 2rem;
+  color: #1a1a2e;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 24px 70px rgba(16, 43, 72, 0.22);
+}
+
+.gate-card h1,
+.role-card h1 {
+  margin-bottom: 1.25rem;
+  font-size: 1.8rem;
+}
+
+.gate-eyebrow {
+  margin-bottom: 0.5rem;
+  color: #185fa5;
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.gate-card label {
+  display: grid;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+  color: #5c5c72;
+  font-weight: 700;
+}
+
+.gate-card input {
+  width: 100%;
+  padding: 0.85rem 0.95rem;
+  color: #1a1a2e;
+  border: 1px solid #d7dce5;
+  border-radius: 6px;
+  font: inherit;
+}
+
+.gate-error {
+  margin-bottom: 1rem;
+  padding: 0.75rem 0.85rem;
+  color: #991b1b;
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  font-weight: 700;
+}
+
+.gate-card .hero-action {
+  color: #fff;
+  background: #185fa5;
+}
+
+.role-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.role-grid button {
+  display: grid;
+  gap: 0.35rem;
+  min-height: 4rem;
+  padding: 0.85rem;
+  color: #1a1a2e;
+  background: #fff;
+  border: 1px solid #d7dce5;
+  border-radius: 8px;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
+}
+
+.role-code {
+  color: #185fa5;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.role-grid button:hover {
+  border-color: #185fa5;
+  background: #e8f2fc;
+}
+
+.respondent-role {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  color: #185fa5;
+  background: #e8f2fc;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
 }
 
 .home-summary {
@@ -107,6 +226,10 @@
 
 @media (max-width: 560px) {
   .home-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .role-grid {
     grid-template-columns: 1fr;
   }
 }

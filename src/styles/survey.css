@@ -29,6 +29,8 @@
   --shadow-sm: 0 1px 3px rgba(0,0,0,.06);
   --shadow-md: 0 8px 30px rgba(24,95,165,.12);
   --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --survey-top-bar-height: 58px;
+  --survey-bottom-nav-height: 76px;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -208,11 +210,12 @@ body {
   flex-shrink: 0;
   background: var(--bg);
   border-right: 1px solid var(--border);
-  padding: 1rem;
+  padding: 1rem 1rem calc(1rem + var(--survey-bottom-nav-height));
   overflow-y: auto;
-  max-height: calc(100vh - 58px);
+  max-height: calc(100vh - var(--survey-top-bar-height) - var(--survey-bottom-nav-height));
   position: sticky;
-  top: 58px;
+  top: var(--survey-top-bar-height);
+  scrollbar-gutter: stable;
 }
 .sidebar-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-light); margin-bottom: 0.75rem; }
 .section-item {
@@ -569,11 +572,12 @@ textarea.open-q:focus {
   flex-shrink: 0;
   background: var(--bg);
   border-left: 1px solid var(--border);
-  padding: 1.25rem;
+  padding: 1.25rem 1.25rem calc(1.25rem + var(--survey-bottom-nav-height));
   overflow-y: auto;
-  max-height: calc(100vh - 58px);
+  max-height: calc(100vh - var(--survey-top-bar-height) - var(--survey-bottom-nav-height));
   position: sticky;
-  top: 58px;
+  top: var(--survey-top-bar-height);
+  scrollbar-gutter: stable;
 }
 .right-panel h3 { font-size: 14px; font-weight: 600; margin-bottom: 1rem; }
 .confirmed-empty { font-size: 13px; color: var(--text-muted); text-align: center; padding: 2rem 0.5rem; }
@@ -780,8 +784,9 @@ textarea.open-q:focus {
   .sidebar, .right-panel {
     display: none;
     position: fixed;
-    top: 58px;
-    bottom: 64px;
+    top: var(--survey-top-bar-height);
+    bottom: var(--survey-bottom-nav-height);
+    max-height: none;
     z-index: 80;
     box-shadow: var(--shadow-md);
   }

@@ -1,4 +1,4 @@
-export default function Hero() {
+export default function Hero({ onStartSurvey }) {
   return (
     <section className="hero" id="home">
       <div className="hero-content">
@@ -8,7 +8,7 @@ export default function Hero() {
           A structured survey experience for tracking warehouse priorities,
           investment signals, infrastructure gaps, and future outlook.
         </p>
-        <a className="hero-action" href="#survey">Start survey</a>
+        <button className="hero-action" type="button" onClick={onStartSurvey}>Start survey</button>
       </div>
     </section>
   );

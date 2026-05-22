@@ -2,6 +2,24 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { jsPDF } from 'jspdf';
 
 const { SECTIONS, QUESTIONS, AUTOFILL_RULES, STORAGE_KEY } = window.SURVEY_DATA;
+
+function questionAppliesToRole(q, roleCode) {
+  if (!q) return false;
+  const applicability = String(q.applicability || 'ALL')
+    .split(',')
+    .map(item => item.trim().toUpperCase());
+
+  return applicability.includes('ALL') || applicability.includes(String(roleCode || '').toUpperCase());
+}
+
+function getFilteredSections(roleCode) {
+  return SECTIONS
+    .map(section => ({
+      ...section,
+      qs: section.qs.filter(qnum => questionAppliesToRole(QUESTIONS[qnum], roleCode)),
+    }))
+    .filter(section => section.qs.length > 0);
+}
 const SKIP_LABEL = 'Skipped — prefer not to answer';
 
 /* -- Utils -- */
@@ -75,7 +93,7 @@ function getAnswerDisplay(qnum, answers, skipped) {
   return '';
 }
 
-function downloadConfirmedAnswersPdf(confirmed, confirmedSnapshot) {
+function downloadConfirmedAnswersPdf(confirmed, confirmedSnapshot, sections = SECTIONS) {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   const margin = 14;
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -106,7 +124,7 @@ function downloadConfirmedAnswersPdf(confirmed, confirmedSnapshot) {
   writeBlock('Generated: ' + new Date().toLocaleString(), { size: 9, color: [100, 100, 120], gap: 10 });
 
   let questionCount = 0;
-  SECTIONS.forEach(s => {
+  sections.forEach(s => {
     const items = s.qs.filter(q => confirmed[q]);
     if (!items.length) return;
     ensureSpace(14);
@@ -456,8 +474,9 @@ function SectionCompleteModal({ data, onClose, onNext }) {
 }
 
 /* -- Complete -- */
-function CompleteScreen({ stats, confirmed, confirmedSnapshot, onExport, onRestart }) {
-  const confirmedCount = Object.keys(confirmed).filter(k => confirmed[k]).length;
+function CompleteScreen({ stats, confirmed, confirmedSnapshot, sections, onExport, onRestart }) {
+  const sectionQuestions = sections.flatMap(section => section.qs);
+  const confirmedCount = sectionQuestions.filter(qnum => confirmed[qnum]).length;
   return (
     <div className="screen-overlay complete-screen-overlay">
       <div className="screen-card complete-card-wide">
@@ -467,13 +486,13 @@ function CompleteScreen({ stats, confirmed, confirmedSnapshot, onExport, onResta
         <div className="complete-stats">
           <div className="complete-stat"><div className="n">{stats.answered}</div><div>Answered</div></div>
           <div className="complete-stat"><div className="n">{stats.confirmed}</div><div>Confirmed</div></div>
-          <div className="complete-stat"><div className="n">15</div><div>Sections</div></div>
+          <div className="complete-stat"><div className="n">{sections.length}</div><div>Sections</div></div>
         </div>
         {confirmedCount > 0 ? (
           <div className="complete-summary">
             <h2 className="complete-summary-title">Your confirmed responses</h2>
             <p className="complete-summary-note">Below is what you confirmed during the survey (including skipped questions).</p>
-            {SECTIONS.map(s => {
+            {sections.map(s => {
               const items = s.qs.filter(q => confirmed[q]);
               if (!items.length) return null;
               return (
@@ -506,8 +525,8 @@ function CompleteScreen({ stats, confirmed, confirmedSnapshot, onExport, onResta
 }
 
 /* -- Main App -- */
-export default function App() {
-  const [screen, setScreen] = useState('welcome');
+export default function App({ initialScreen = 'welcome', respondent, onFinish }) {
+  const [screen, setScreen] = useState(initialScreen);
   const [answers, setAnswers] = useState({});
   const [confirmed, setConfirmed] = useState({});
   const [confirmedSnapshot, setConfirmedSnapshot] = useState({});
@@ -520,6 +539,10 @@ export default function App() {
   const [hasDraft, setHasDraft] = useState(false);
   const [sectionPopup, setSectionPopup] = useState(null);
   const saveTimer = useRef(null);
+  const activeSections = getFilteredSections(respondent?.roleCode);
+  const activeQuestionNums = activeSections.flatMap(section => section.qs);
+  const activeQuestionTotal = activeQuestionNums.length;
+  const activeSectionTotal = activeSections.length;
 
   const showToast = useCallback((msg, type = '') => {
     const id = Date.now() + Math.random();
@@ -574,7 +597,8 @@ export default function App() {
   };
 
   const showSectionCompletePopup = (qnum) => {
-    const section = SECTIONS[sectionIdx];
+    const section = activeSections[sectionIdx];
+    if (!section) return;
     const lastQ = section.qs[section.qs.length - 1];
     if (qnum !== lastQ) return;
     const allAnswered = section.qs.every(q => isAnswered(q, answers, skipped));
@@ -584,8 +608,8 @@ export default function App() {
       num: section.num,
       title: section.title,
       total: p.total,
-      isLast: sectionIdx === 14,
-      nextTitle: sectionIdx < 14 ? SECTIONS[sectionIdx + 1].title : null,
+      isLast: sectionIdx === activeSectionTotal - 1,
+      nextTitle: sectionIdx < activeSectionTotal - 1 ? activeSections[sectionIdx + 1].title : null,
     });
   };
 
@@ -649,19 +673,25 @@ export default function App() {
     scheduleSave();
   };
 
-  const totalAnswered = Object.keys(QUESTIONS).filter(k => isAnswered(+k, answers, skipped)).length;
-  const pct = Math.round((totalAnswered / 75) * 100);
+  const totalAnswered = activeQuestionNums.filter(qnum => isAnswered(qnum, answers, skipped)).length;
+  const pct = activeQuestionTotal ? Math.round((totalAnswered / activeQuestionTotal) * 100) : 0;
 
   const getSectionProgress = (sec) => {
     const done = sec.qs.filter(q => isAnswered(q, answers, skipped)).length;
     return { done, total: sec.qs.length, pct: Math.round((done / sec.qs.length) * 100) };
   };
 
-  const sec = SECTIONS[sectionIdx];
+  useEffect(() => {
+    if (sectionIdx > activeSectionTotal - 1) {
+      setSectionIdx(Math.max(activeSectionTotal - 1, 0));
+    }
+  }, [activeSectionTotal, sectionIdx]);
+
+  const sec = activeSections[sectionIdx] || activeSections[0];
 
   const goNextSection = () => {
     setSectionPopup(null);
-    if (sectionIdx < 14) {
+    if (sectionIdx < activeSectionTotal - 1) {
       setSectionIdx(i => i + 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -705,18 +735,19 @@ export default function App() {
         <CompleteScreen
           stats={{
             answered: totalAnswered,
-            confirmed: Object.keys(confirmed).filter(k => confirmed[k]).length
+            confirmed: activeQuestionNums.filter(qnum => confirmed[qnum]).length
           }}
           confirmed={confirmed}
           confirmedSnapshot={confirmedSnapshot}
+          sections={activeSections}
           onExport={() => {
-            const confirmedCount = Object.keys(confirmed).filter(k => confirmed[k]).length;
+            const confirmedCount = activeQuestionNums.filter(qnum => confirmed[qnum]).length;
             if (!confirmedCount) {
               showToast('No confirmed answers to download', '');
               return;
             }
             try {
-              downloadConfirmedAnswersPdf(confirmed, confirmedSnapshot);
+              downloadConfirmedAnswersPdf(confirmed, confirmedSnapshot, activeSections);
               showToast('PDF downloaded', 'success');
             } catch {
               showToast('Could not create PDF. Check your connection and try again.', '');
@@ -737,9 +768,10 @@ export default function App() {
         <div className="top-bar-inner">
           <button type="button" className="icon-btn mobile-menu-btn" onClick={() => { setSidebarOpen(true); setRightOpen(false); }} aria-label="Sections">{'\u2630'}</button>
           <h1>Warehousing Survey 2026</h1>
+          {respondent?.role && <span className="respondent-role">{respondent.role}</span>}
           <div className="progress-wrap">
             <div className="progress-meta">
-              <span>{totalAnswered} of 75 answered</span>
+              <span>{totalAnswered} of {activeQuestionTotal} answered</span>
               <span>{pct}%</span>
             </div>
             <div className="progress-bar">
@@ -758,7 +790,7 @@ export default function App() {
       <div className="survey-body">
         <aside className={`sidebar${sidebarOpen ? ' open' : ''}`}>
           <div className="sidebar-title">Sections</div>
-          {SECTIONS.map((s, i) => {
+          {activeSections.map((s, i) => {
             const p = getSectionProgress(s);
             return (
               <button
@@ -780,7 +812,7 @@ export default function App() {
 
         <main className="main-content">
           <div className="section-header">
-            <span className="badge">Section {sec.num} of 15</span>
+            <span className="badge">Section {sectionIdx + 1} of {activeSectionTotal}</span>
             <h2>{sec.title}</h2>
             <p>{sec.qs.length} questions | {prog.done} of {prog.total} completed</p>
           </div>
@@ -805,7 +837,7 @@ export default function App() {
           {!Object.keys(confirmed).length ? (
             <div className="confirmed-empty">Select an answer and click <strong>Confirm</strong> to see it here. You can edit your answer and confirm again to update.</div>
           ) : (
-            SECTIONS.map(s => {
+            activeSections.map(s => {
               const items = s.qs.filter(q => confirmed[q]);
               if (!items.length) return null;
               return (
@@ -816,7 +848,7 @@ export default function App() {
                       key={qnum}
                       className="confirmed-item"
                       onClick={() => {
-                        const idx = SECTIONS.findIndex(x => x.qs.includes(qnum));
+                        const idx = activeSections.findIndex(x => x.qs.includes(qnum));
                         if (idx >= 0) setSectionIdx(idx);
                         setRightOpen(false);
                         setTimeout(() => document.getElementById('q-block-' + qnum)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150);
@@ -836,7 +868,7 @@ export default function App() {
       <nav className="bottom-nav">
         <div className="bottom-nav-inner">
           <button type="button" className="btn-secondary" disabled={sectionIdx === 0} onClick={() => { setSectionIdx(i => i - 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>{'\u2190'} Previous</button>
-          <span className="section-counter">Section <strong>{sec.num}</strong> of 15</span>
+          <span className="section-counter">Section <strong>{sectionIdx + 1}</strong> of {activeSectionTotal}</span>
           <div className="nav-group">
             <button type="button" className="btn-secondary" onClick={() => {
               let n = 0;
@@ -862,15 +894,16 @@ export default function App() {
               }
             }}>Confirm section</button>
             <button type="button" className="btn-primary" onClick={() => {
-              if (sectionIdx < 14) {
+              if (sectionIdx < activeSectionTotal - 1) {
                 setSectionIdx(i => i + 1);
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               } else {
                 saveDraft(false);
                 setScreen('complete');
+                onFinish?.();
               }
             }}>
-              {sectionIdx === 14 ? 'Finish survey \u2713' : 'Next section \u2192'}
+              {sectionIdx === activeSectionTotal - 1 ? 'Finish survey \u2713' : 'Next section \u2192'}
             </button>
           </div>
         </div>
