@@ -88,7 +88,8 @@
   text-transform: uppercase;
 }
 
-.gate-card label {
+.gate-card label,
+.respondent-form label {
   display: grid;
   gap: 0.4rem;
   margin-bottom: 1rem;
@@ -96,13 +97,25 @@
   font-weight: 700;
 }
 
-.gate-card input {
+.respondent-form label span {
+  color: #8888a0;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.gate-card input,
+.respondent-form input {
   width: 100%;
   padding: 0.85rem 0.95rem;
   color: #1a1a2e;
   border: 1px solid #d7dce5;
   border-radius: 6px;
   font: inherit;
+}
+
+.respondent-form .hero-action {
+  color: #fff;
+  background: #185fa5;
 }
 
 .gate-error {
@@ -225,11 +238,64 @@
 }
 
 @media (max-width: 560px) {
+  .hero {
+    min-height: auto;
+    padding: 3rem 1rem 2.25rem;
+    background-position: center;
+  }
+
+  .hero h1 {
+    font-size: 2.1rem;
+    line-height: 1.06;
+  }
+
+  .hero p {
+    font-size: 0.98rem;
+  }
+
+  .hero-action {
+    width: 100%;
+    justify-content: center;
+    min-height: 48px;
+  }
+
+  .gate-screen,
+  .role-screen {
+    min-height: 100dvh;
+    padding: 1rem;
+  }
+
+  .role-screen {
+    min-height: calc(100dvh - 154px);
+  }
+
+  .gate-card,
+  .role-card {
+    padding: 1.25rem;
+    box-shadow: 0 18px 48px rgba(16, 43, 72, 0.18);
+  }
+
+  .gate-card h1,
+  .role-card h1 {
+    font-size: 1.45rem;
+  }
+
+  .gate-card input,
+  .respondent-form input {
+    min-height: 48px;
+    font-size: 16px;
+  }
+
   .home-summary {
     grid-template-columns: 1fr;
+    padding: 1rem;
   }
 
   .role-grid {
     grid-template-columns: 1fr;
+  }
+
+  .role-grid button {
+    min-height: 56px;
   }
 }

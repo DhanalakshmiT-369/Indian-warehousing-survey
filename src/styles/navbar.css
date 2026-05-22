@@ -51,4 +51,28 @@
     align-items: flex-start;
     flex-direction: column;
   }
+
+  .navbar {
+    gap: 0.65rem;
+    padding: 0.75rem 1rem;
+  }
+
+  .navbar-brand {
+    font-size: 0.95rem;
+  }
+
+  .navbar-links {
+    width: 100%;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .navbar-links a {
+    font-size: 0.86rem;
+  }
+
+  .footer {
+    padding: 1rem;
+    font-size: 0.86rem;
+  }
 }

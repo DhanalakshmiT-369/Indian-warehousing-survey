@@ -39,6 +39,7 @@ function getCurrentRoute() {
 
 export default function App() {
   const [credentials, setCredentials] = useState(null);
+  const [respondentDetails, setRespondentDetails] = useState(null);
   const [role, setRole] = useState('');
   const [loginError, setLoginError] = useState('');
   const [route, setRoute] = useState(getCurrentRoute);
@@ -77,6 +78,17 @@ export default function App() {
     navigate(routes.main);
   };
 
+  const handleRespondentDetailsSubmit = (event) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+
+    setRespondentDetails({
+      name: formData.get('name')?.trim(),
+      email: formData.get('email')?.trim(),
+      organization: formData.get('organization')?.trim(),
+    });
+  };
+
   if (!credentials || route === routes.credentials) {
     return (
       <main className="gate-screen">
@@ -104,23 +116,45 @@ export default function App() {
         <Navbar />
         <main className="role-screen">
           <section className="role-card">
-            <p className="gate-eyebrow">Before the survey</p>
-            <h1>Select your role</h1>
-            <div className="role-grid">
-              {roles.map((item) => (
-                <button
-                  key={item.code}
-                  type="button"
-                  onClick={() => {
-                    setRole(item);
-                    navigate(routes.questions);
-                  }}
-                >
-                  <span className="role-code">{item.code}</span>
-                  {item.label}
-                </button>
-              ))}
-            </div>
+            {!respondentDetails ? (
+              <form className="respondent-form" onSubmit={handleRespondentDetailsSubmit}>
+                <p className="gate-eyebrow">Before the survey</p>
+                <h1>Your details</h1>
+                <label>
+                  Name
+                  <input name="name" type="text" placeholder="Your full name" required />
+                </label>
+                <label>
+                  Email
+                  <input name="email" type="email" placeholder="you@example.com" />
+                </label>
+                <label>
+                  Organization / Company name
+                  <input name="organization" type="text" placeholder="Company or organization" required />
+                </label>
+                <button className="hero-action" type="submit">Continue to role</button>
+              </form>
+            ) : (
+              <>
+                <p className="gate-eyebrow">Before the survey</p>
+                <h1>Select your role</h1>
+                <div className="role-grid">
+                  {roles.map((item) => (
+                    <button
+                      key={item.code}
+                      type="button"
+                      onClick={() => {
+                        setRole(item);
+                        navigate(routes.questions);
+                      }}
+                    >
+                      <span className="role-code">{item.code}</span>
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </section>
         </main>
         <Footer />
@@ -135,7 +169,7 @@ export default function App() {
         <Survey
           initialScreen={route === routes.finished ? 'complete' : 'survey'}
           onFinish={() => navigate(routes.finished)}
-          respondent={{ ...credentials, role: role.label, roleCode: role.code }}
+          respondent={{ ...credentials, ...respondentDetails, role: role.label, roleCode: role.code }}
         />
       ) : (
         <Home onStartSurvey={() => navigate(routes.roles)} />
@@ -144,4 +178,3 @@ export default function App() {
     </>
   );
 }
-

@@ -473,6 +473,36 @@ function SectionCompleteModal({ data, onClose, onNext }) {
   );
 }
 
+function RequiredQuestionModal({ data, onClose, onGoToQuestion }) {
+  if (!data) return null;
+
+  return (
+    <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="required-question-title">
+      <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-icon modal-warning">!</div>
+        <h2 id="required-question-title">Question needs attention</h2>
+        <p className="modal-detail">
+          You have skipped this particular question:
+        </p>
+        <div className="modal-question-list">
+          {data.questions.map(({ qnum, label }) => (
+            <button key={qnum} type="button" onClick={() => onGoToQuestion(qnum)}>
+              <strong>Q{qnum}</strong>
+              <span>{label}</span>
+            </button>
+          ))}
+        </div>
+        <p className="modal-next">
+          Either you should answer this question, or if it is not relevant, then skip it.
+        </p>
+        <div className="modal-actions">
+          <button type="button" className="btn-primary" onClick={onClose}>Stay on this section</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* -- Complete -- */
 function CompleteScreen({ stats, confirmed, confirmedSnapshot, sections, onExport, onRestart }) {
   const sectionQuestions = sections.flatMap(section => section.qs);
@@ -538,6 +568,7 @@ export default function App({ initialScreen = 'welcome', respondent, onFinish })
   const [rightOpen, setRightOpen] = useState(false);
   const [hasDraft, setHasDraft] = useState(false);
   const [sectionPopup, setSectionPopup] = useState(null);
+  const [requiredPopup, setRequiredPopup] = useState(null);
   const saveTimer = useRef(null);
   const activeSections = getFilteredSections(respondent?.roleCode);
   const activeQuestionNums = activeSections.flatMap(section => section.qs);
@@ -694,6 +725,48 @@ export default function App({ initialScreen = 'welcome', respondent, onFinish })
     if (sectionIdx < activeSectionTotal - 1) {
       setSectionIdx(i => i + 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const getMissingQuestions = (section) => (
+    section.qs
+      .filter(qnum => !isAnswered(qnum, answers, skipped))
+      .map(qnum => ({
+        qnum,
+        label: QUESTIONS[qnum]?.label || 'Untitled question',
+      }))
+  );
+
+  const showRequiredQuestions = (missingQuestions) => {
+    setRequiredPopup({ questions: missingQuestions });
+    const firstQuestion = missingQuestions[0]?.qnum;
+    if (firstQuestion) {
+      setTimeout(() => {
+        document.getElementById('q-block-' + firstQuestion)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+    }
+  };
+
+  const goToMissingQuestion = (qnum) => {
+    setRequiredPopup(null);
+    document.getElementById('q-block-' + qnum)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
+
+  const handleAdvanceSection = () => {
+    const missingQuestions = getMissingQuestions(sec);
+
+    if (missingQuestions.length) {
+      showRequiredQuestions(missingQuestions);
+      return;
+    }
+
+    if (sectionIdx < activeSectionTotal - 1) {
+      setSectionIdx(i => i + 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      saveDraft(false);
+      setScreen('complete');
+      onFinish?.();
     }
   };
 
@@ -870,39 +943,7 @@ export default function App({ initialScreen = 'welcome', respondent, onFinish })
           <button type="button" className="btn-secondary" disabled={sectionIdx === 0} onClick={() => { setSectionIdx(i => i - 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>{'\u2190'} Previous</button>
           <span className="section-counter">Section <strong>{sectionIdx + 1}</strong> of {activeSectionTotal}</span>
           <div className="nav-group">
-            <button type="button" className="btn-secondary" onClick={() => {
-              let n = 0;
-              const snap = { ...confirmedSnapshot };
-              const lastQ = sec.qs[sec.qs.length - 1];
-              const lastWasUnconfirmed = isAnswered(lastQ, answers, skipped) && !confirmed[lastQ];
-              sec.qs.forEach(q => {
-                if (isAnswered(q, answers, skipped)) {
-                  if (!confirmed[q]) n++;
-                  snap[q] = getAnswerDisplay(q, answers, skipped);
-                }
-              });
-              setConfirmed(c => {
-                const next = { ...c };
-                sec.qs.forEach(q => { if (isAnswered(q, answers, skipped)) next[q] = true; });
-                return next;
-              });
-              setConfirmedSnapshot(snap);
-              scheduleSave();
-              showToast(n ? `Confirmed ${n} answer(s)` : 'Section answers confirmed', 'success');
-              if (lastWasUnconfirmed && sec.qs.every(q => isAnswered(q, answers, skipped))) {
-                showSectionCompletePopup(lastQ);
-              }
-            }}>Confirm section</button>
-            <button type="button" className="btn-primary" onClick={() => {
-              if (sectionIdx < activeSectionTotal - 1) {
-                setSectionIdx(i => i + 1);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              } else {
-                saveDraft(false);
-                setScreen('complete');
-                onFinish?.();
-              }
-            }}>
+            <button type="button" className="btn-primary" onClick={handleAdvanceSection}>
               {sectionIdx === activeSectionTotal - 1 ? 'Finish survey \u2713' : 'Next section \u2192'}
             </button>
           </div>
@@ -913,6 +954,11 @@ export default function App({ initialScreen = 'welcome', respondent, onFinish })
         data={sectionPopup}
         onClose={() => setSectionPopup(null)}
         onNext={goNextSection}
+      />
+      <RequiredQuestionModal
+        data={requiredPopup}
+        onClose={() => setRequiredPopup(null)}
+        onGoToQuestion={goToMissingQuestion}
       />
       <ToastContainer toasts={toasts} />
     </div>
