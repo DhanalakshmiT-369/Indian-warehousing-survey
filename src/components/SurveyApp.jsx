@@ -482,7 +482,7 @@ function RequiredQuestionModal({ data, onClose, onGoToQuestion }) {
         <div className="modal-icon modal-warning">!</div>
         <h2 id="required-question-title">Question needs attention</h2>
         <p className="modal-detail">
-          You have skipped this particular question:
+          Please answer and confirm every question before moving ahead:
         </p>
         <div className="modal-question-list">
           {data.questions.map(({ qnum, label }) => (
@@ -493,7 +493,7 @@ function RequiredQuestionModal({ data, onClose, onGoToQuestion }) {
           ))}
         </div>
         <p className="modal-next">
-          Either you should answer this question, or if it is not relevant, then skip it.
+          If a question is not relevant, use Skip this question. Skipped questions are confirmed automatically.
         </p>
         <div className="modal-actions">
           <button type="button" className="btn-primary" onClick={onClose}>Stay on this section</button>
@@ -632,8 +632,8 @@ export default function App({ initialScreen = 'welcome', respondent, onFinish })
     if (!section) return;
     const lastQ = section.qs[section.qs.length - 1];
     if (qnum !== lastQ) return;
-    const allAnswered = section.qs.every(q => isAnswered(q, answers, skipped));
-    if (!allAnswered) return;
+    const allConfirmed = section.qs.every(q => confirmed[q] || q === qnum);
+    if (!allConfirmed) return;
     const p = getSectionProgress(section);
     setSectionPopup({
       num: section.num,
@@ -696,6 +696,18 @@ export default function App({ initialScreen = 'welcome', respondent, onFinish })
 
   const setAnswer = (qnum, val) => {
     setSkipped(s => { const n = { ...s }; delete n[qnum]; return n; });
+    setConfirmed(c => {
+      if (!c[qnum]) return c;
+      const n = { ...c };
+      delete n[qnum];
+      return n;
+    });
+    setConfirmedSnapshot(s => {
+      if (!s[qnum]) return s;
+      const n = { ...s };
+      delete n[qnum];
+      return n;
+    });
     setAnswers(prev => {
       let next = { ...prev, [qnum]: val };
       next = checkAutofills(qnum, next);
@@ -730,7 +742,7 @@ export default function App({ initialScreen = 'welcome', respondent, onFinish })
 
   const getMissingQuestions = (section) => (
     section.qs
-      .filter(qnum => !isAnswered(qnum, answers, skipped))
+      .filter(qnum => !isAnswered(qnum, answers, skipped) || !confirmed[qnum])
       .map(qnum => ({
         qnum,
         label: QUESTIONS[qnum]?.label || 'Untitled question',
@@ -756,6 +768,7 @@ export default function App({ initialScreen = 'welcome', respondent, onFinish })
     const missingQuestions = getMissingQuestions(sec);
 
     if (missingQuestions.length) {
+      showToast('Please confirm every answer before moving ahead');
       showRequiredQuestions(missingQuestions);
       return;
     }
