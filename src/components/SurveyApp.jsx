@@ -478,7 +478,7 @@ function RequiredQuestionModal({ data, onClose, onGoToQuestion }) {
 
   return (
     <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="required-question-title">
-      <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-card required-question-card" onClick={(e) => e.stopPropagation()}>
         <div className="modal-icon modal-warning">!</div>
         <h2 id="required-question-title">Question needs attention</h2>
         <p className="modal-detail">

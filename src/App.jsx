@@ -162,18 +162,20 @@ export default function App() {
     );
   }
 
+  if (route === routes.questions || route === routes.finished) {
+    return (
+      <Survey
+        initialScreen={route === routes.finished ? 'complete' : 'survey'}
+        onFinish={() => navigate(routes.finished)}
+        respondent={{ ...credentials, ...respondentDetails, role: role.label, roleCode: role.code }}
+      />
+    );
+  }
+
   return (
     <>
       <Navbar />
-      {route === routes.questions || route === routes.finished ? (
-        <Survey
-          initialScreen={route === routes.finished ? 'complete' : 'survey'}
-          onFinish={() => navigate(routes.finished)}
-          respondent={{ ...credentials, ...respondentDetails, role: role.label, roleCode: role.code }}
-        />
-      ) : (
-        <Home onStartSurvey={() => navigate(routes.roles)} />
-      )}
+      <Home onStartSurvey={() => navigate(routes.roles)} />
       <Footer />
     </>
   );
