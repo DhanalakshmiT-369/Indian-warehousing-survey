@@ -6,7 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "backend:install": "cd backend && npm install",
+    "backend:start": "cd backend && node server.js",
+    "backend:dev": "cd backend && npm run dev",
+    "start": "npm run build && npm run backend:start"
   },
   "dependencies": {
     "jspdf": "^2.5.2",
@@ -31,3 +35,4 @@
   },
   "homepage": "https://github.com/DhanalakshmiT-369/Indian-warehousing-survey#readme"
 }
+

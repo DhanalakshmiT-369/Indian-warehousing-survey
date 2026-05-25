@@ -18,3 +18,7 @@ import './surveyData.js';
 export const surveyData = window.SURVEY_DATA;
 export const sections = window.SURVEY_DATA?.SECTIONS || [];
 export const questions = window.SURVEY_DATA?.QUESTIONS || {};
+export const SECTIONS = window.SURVEY_DATA?.SECTIONS || [];
+export const QUESTIONS = window.SURVEY_DATA?.QUESTIONS || {};
+export const AUTOFILL_RULES = window.SURVEY_DATA?.AUTOFILL_RULES || {};
+export const STORAGE_KEY = window.SURVEY_DATA?.STORAGE_KEY || 'india_warehousing_survey_draft';

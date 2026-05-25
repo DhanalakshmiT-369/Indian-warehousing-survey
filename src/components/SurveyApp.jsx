@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { jsPDF } from 'jspdf';
+import { apiClient } from '../api/client.js';
 
-const { SECTIONS, QUESTIONS, AUTOFILL_RULES, STORAGE_KEY } = window.SURVEY_DATA;
+import { SECTIONS, QUESTIONS, AUTOFILL_RULES, STORAGE_KEY } from '../data/questions.js';
 
 function questionAppliesToRole(q, roleCode) {
   if (!q) return false;
@@ -504,7 +505,7 @@ function RequiredQuestionModal({ data, onClose, onGoToQuestion }) {
 }
 
 /* -- Complete -- */
-function CompleteScreen({ stats, confirmed, confirmedSnapshot, sections, onExport, onRestart }) {
+function CompleteScreen({ stats, confirmed, confirmedSnapshot, sections, onExport, onRestart, onSubmit }) {
   const sectionQuestions = sections.flatMap(section => section.qs);
   const confirmedCount = sectionQuestions.filter(qnum => confirmed[qnum]).length;
   return (
@@ -547,6 +548,7 @@ function CompleteScreen({ stats, confirmed, confirmedSnapshot, sections, onExpor
         )}
         <div className="complete-actions">
           <button type="button" className="btn-primary" onClick={onExport}>Download PDF</button>
+          <button type="button" className="btn-secondary" onClick={onSubmit} style={{ marginRight: 8 }}>Submit & Finish</button>
           <button type="button" className="btn-secondary" onClick={onRestart}>Start over</button>
         </div>
       </div>
@@ -574,6 +576,8 @@ export default function App({ initialScreen = 'welcome', respondent, onFinish })
   const activeQuestionNums = activeSections.flatMap(section => section.qs);
   const activeQuestionTotal = activeQuestionNums.length;
   const activeSectionTotal = activeSections.length;
+  const totalAnswered = activeQuestionNums.filter(qnum => isAnswered(qnum, answers, skipped)).length;
+  const pct = activeQuestionTotal ? Math.round((totalAnswered / activeQuestionTotal) * 100) : 0;
 
   const showToast = useCallback((msg, type = '') => {
     const id = Date.now() + Math.random();
@@ -585,12 +589,20 @@ export default function App({ initialScreen = 'welcome', respondent, onFinish })
 
   const saveDraft = useCallback((showMsg) => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      const draftData = {
         answers, confirmed, confirmedSnapshot, autofilled, skipped, currentSectionIdx: sectionIdx, savedAt: Date.now()
-      }));
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(draftData));
+
+      apiClient.saveSurvey(respondent, answers, confirmed, confirmedSnapshot, skipped, {
+        currentSectionIdx: sectionIdx,
+        totalAnswered: totalAnswered,
+        totalQuestions: activeQuestionTotal
+      }).catch(err => console.error('Backend save failed:', err));
+
       if (showMsg) showToast('Progress saved', 'success');
     } catch { if (showMsg) showToast('Could not save'); }
-  }, [answers, confirmed, confirmedSnapshot, autofilled, skipped, sectionIdx, showToast]);
+  }, [answers, confirmed, confirmedSnapshot, autofilled, skipped, sectionIdx, showToast, respondent, totalAnswered, activeQuestionTotal]);
 
   const scheduleSave = useCallback(() => {
     clearTimeout(saveTimer.current);
@@ -716,8 +728,6 @@ export default function App({ initialScreen = 'welcome', respondent, onFinish })
     scheduleSave();
   };
 
-  const totalAnswered = activeQuestionNums.filter(qnum => isAnswered(qnum, answers, skipped)).length;
-  const pct = activeQuestionTotal ? Math.round((totalAnswered / activeQuestionTotal) * 100) : 0;
 
   const getSectionProgress = (sec) => {
     const done = sec.qs.filter(q => isAnswered(q, answers, skipped)).length;
@@ -837,6 +847,19 @@ export default function App({ initialScreen = 'welcome', respondent, onFinish })
               showToast('PDF downloaded', 'success');
             } catch {
               showToast('Could not create PDF. Check your connection and try again.', '');
+            }
+          }}
+          onSubmit={async () => {
+            try {
+              showToast('Submitting survey...', '');
+              const draftSurvey = await apiClient.getDraft();
+              if (draftSurvey._id) {
+                await apiClient.submitSurvey(draftSurvey._id);
+                showToast('Survey submitted successfully!', 'success');
+                setTimeout(() => window.location.reload(), 1500);
+              }
+            } catch (error) {
+              showToast('Error submitting survey: ' + error.message, '');
             }
           }}
           onRestart={() => window.location.reload()}

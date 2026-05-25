@@ -8,6 +8,7 @@ import Navbar from './components/Navbar.jsx';
 import Footer from './components/Footer.jsx';
 import Home from './pages/Home.jsx';
 import Survey from './pages/Survey.jsx';
+import { apiClient } from './api/client.js';
 
 const roles = [
   { code: 'WH/3PL', label: 'Warehouse Operators / 3PL Providers' },
@@ -17,11 +18,6 @@ const roles = [
   { code: 'GOVT', label: 'Government / Policy Makers / Regulators' },
   { code: 'TECH', label: 'Technology Providers' },
   { code: 'EXPRT', label: 'Industry Experts / Consultants' },
-];
-
-const authorizedUsers = [
-  { username: 'admin', password: 'survey2026' },
-  { username: 'user', password: 'warehouse2026' },
 ];
 
 const routes = {
@@ -43,6 +39,7 @@ export default function App() {
   const [role, setRole] = useState('');
   const [loginError, setLoginError] = useState('');
   const [route, setRoute] = useState(getCurrentRoute);
+  const [isLoading, setIsLoading] = useState(false);
 
   const navigate = (nextRoute) => {
     window.history.pushState({}, '', nextRoute);
@@ -59,23 +56,24 @@ export default function App() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  const handleCredentialsSubmit = (event) => {
+  const handleCredentialsSubmit = async (event) => {
     event.preventDefault();
+    setIsLoading(true);
     const formData = new FormData(event.currentTarget);
     const username = formData.get('username')?.trim();
     const password = formData.get('password')?.trim();
-    const isAuthorized = authorizedUsers.some(
-      (user) => user.username === username && user.password === password
-    );
 
-    if (!isAuthorized) {
-      setLoginError('Invalid username or password.');
-      return;
+    try {
+      const { token } = await apiClient.login(username, password);
+      localStorage.setItem('authToken', token);
+      setLoginError('');
+      setCredentials({ username });
+      navigate(routes.main);
+    } catch (error) {
+      setLoginError(error.message || 'Invalid username or password.');
+    } finally {
+      setIsLoading(false);
     }
-
-    setLoginError('');
-    setCredentials({ username });
-    navigate(routes.main);
   };
 
   const handleRespondentDetailsSubmit = (event) => {
@@ -97,14 +95,16 @@ export default function App() {
           <h1>Enter your credentials</h1>
           <label>
             Username
-            <input name="username" type="text" placeholder="Username" required />
+            <input name="username" type="text" placeholder="Username" required disabled={isLoading} />
           </label>
           <label>
             Password
-            <input name="password" type="password" placeholder="Password" required />
+            <input name="password" type="password" placeholder="Password" required disabled={isLoading} />
           </label>
           {loginError && <p className="gate-error">{loginError}</p>}
-          <button className="hero-action" type="submit">Continue</button>
+          <button className="hero-action" type="submit" disabled={isLoading}>
+            {isLoading ? 'Logging in...' : 'Continue'}
+          </button>
         </form>
       </main>
     );
