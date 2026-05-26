@@ -3,11 +3,13 @@ import { useEffect, useState } from 'react';
 import './styles/navbar.css';
 import './styles/hero.css';
 import './styles/survey.css';
+import './styles/admin.css';
 
 import Navbar from './components/Navbar.jsx';
 import Footer from './components/Footer.jsx';
 import Home from './pages/Home.jsx';
 import Survey from './pages/Survey.jsx';
+import AdminPage from './pages/AdminPage.jsx';
 import { apiClient } from './api/client.js';
 
 const roles = [
@@ -23,6 +25,7 @@ const roles = [
 const routes = {
   credentials: '/credentials',
   main: '/main',
+  admin: '/admin',
   roles: '/roles',
   questions: '/questions',
   finished: '/finished',
@@ -36,6 +39,7 @@ function getCurrentRoute() {
 export default function App() {
   const [credentials, setCredentials] = useState(null);
   const [respondentDetails, setRespondentDetails] = useState(null);
+  const [showRoleSelection, setShowRoleSelection] = useState(false);
   const [role, setRole] = useState('');
   const [loginError, setLoginError] = useState('');
   const [route, setRoute] = useState(getCurrentRoute);
@@ -64,11 +68,81 @@ export default function App() {
     const password = formData.get('password')?.trim();
 
     try {
-      const { token } = await apiClient.login(username, password);
-      localStorage.setItem('authToken', token);
-      setLoginError('');
-      setCredentials({ username });
-      navigate(routes.main);
+      if (username === 'admin') {
+        if (password !== 'survey2026') {
+          throw new Error('Invalid admin password.');
+        }
+        const { token } = await apiClient.login(username, password);
+        localStorage.setItem('authToken', token);
+        setLoginError('');
+        setCredentials({ username });
+        navigate(routes.admin);
+      } else {
+        let token;
+        try {
+          // Attempt to login first
+          const data = await apiClient.login(username, password);
+          token = data.token;
+        } catch (loginError) {
+          // If login fails (e.g. user does not exist), register them on the fly
+          try {
+            const regRes = await fetch('/api/auth/register', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ username, password })
+            });
+            if (regRes.ok) {
+              // Successfully registered, now login to get token
+              const data = await apiClient.login(username, password);
+              token = data.token;
+            } else {
+              // Registration failed (e.g. username taken but wrong password entered)
+              throw new Error('Invalid credentials or username already taken.');
+            }
+          } catch (regError) {
+            throw new Error(regError.message || 'Invalid username or password.');
+          }
+        }
+
+        localStorage.setItem('authToken', token);
+        setLoginError('');
+        setCredentials({ username });
+
+        // Fetch existing draft from the database to restore state
+        try {
+          const draft = await apiClient.getDraft();
+          if (draft && draft.respondent) {
+            setRespondentDetails({
+              name: draft.respondent.name || '',
+              email: draft.respondent.email || '',
+              organization: draft.respondent.organization || '',
+            });
+            if (draft.respondent.role) {
+              const matchingRole = roles.find(r => r.label === draft.respondent.role || r.code === draft.respondent.roleCode);
+              setRole(matchingRole || {
+                label: draft.respondent.role,
+                code: draft.respondent.roleCode || ''
+              });
+            }
+            setShowRoleSelection(true);
+                // Populate localStorage so that when the Survey app starts, it resumes the draft!
+                localStorage.setItem('warehousing_survey_draft', JSON.stringify({
+              answers: draft.answers || {},
+              confirmed: draft.confirmed || {},
+              confirmedSnapshot: draft.confirmedSnapshot || {},
+              autofilled: draft.autofilled || {},
+              skipped: draft.skipped || {},
+                  currentSectionIdx: draft.progress?.currentSectionIdx || 0,
+                  savedAt: draft.updatedAt ? new Date(draft.updatedAt).getTime() : Date.now()
+                }));
+              }
+            } catch (draftError) {
+              console.error('Failed to load existing draft:', draftError);
+            }
+
+            // After successful credential/login, show the main intro (Hero) for non-admin users
+            navigate(routes.main);
+      }
     } catch (error) {
       setLoginError(error.message || 'Invalid username or password.');
     } finally {
@@ -85,6 +159,7 @@ export default function App() {
       email: formData.get('email')?.trim(),
       organization: formData.get('organization')?.trim(),
     });
+    setShowRoleSelection(true);
   };
 
   if (!credentials || route === routes.credentials) {
@@ -116,28 +191,37 @@ export default function App() {
         <Navbar />
         <main className="role-screen">
           <section className="role-card">
-            {!respondentDetails ? (
+            {!showRoleSelection ? (
               <form className="respondent-form" onSubmit={handleRespondentDetailsSubmit}>
                 <p className="gate-eyebrow">Before the survey</p>
                 <h1>Your details</h1>
                 <label>
                   Name
-                  <input name="name" type="text" placeholder="Your full name" required />
+                  <input name="name" type="text" placeholder="Your full name" required defaultValue={respondentDetails?.name || ''} />
                 </label>
                 <label>
                   Email
-                  <input name="email" type="email" placeholder="you@example.com" />
+                  <input name="email" type="email" placeholder="you@example.com" defaultValue={respondentDetails?.email || ''} />
                 </label>
                 <label>
                   Organization / Company name
-                  <input name="organization" type="text" placeholder="Company or organization" required />
+                  <input name="organization" type="text" placeholder="Company or organization" required defaultValue={respondentDetails?.organization || ''} />
                 </label>
                 <button className="hero-action" type="submit">Continue to role</button>
               </form>
             ) : (
               <>
                 <p className="gate-eyebrow">Before the survey</p>
-                <h1>Select your role</h1>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '10px' }}>
+                  <h1 style={{ margin: 0 }}>Select your role</h1>
+                  <button 
+                    type="button" 
+                    onClick={() => setShowRoleSelection(false)}
+                    style={{ background: 'none', border: 'none', color: 'var(--primary-color, #2563eb)', cursor: 'pointer', textDecoration: 'underline', fontSize: '0.9rem', padding: 0 }}
+                  >
+                    Edit Details
+                  </button>
+                </div>
                 <div className="role-grid">
                   {roles.map((item) => (
                     <button
@@ -169,6 +253,26 @@ export default function App() {
         onFinish={() => navigate(routes.finished)}
         respondent={{ ...credentials, ...respondentDetails, role: role.label, roleCode: role.code }}
       />
+    );
+  }
+
+  if (route === routes.main) {
+    return (
+      <>
+        <Navbar />
+        <Home onStartSurvey={() => navigate(routes.roles)} />
+        <Footer />
+      </>
+    );
+  }
+
+  if (route === routes.admin) {
+    return (
+      <>
+        <Navbar />
+        <AdminPage />
+        <Footer />
+      </>
     );
   }
 

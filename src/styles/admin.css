@@ -1,0 +1,237 @@
+/* Admin Page Styles - Solid Formal Theme */
+
+/* Import Inter font */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --font-family: 'Inter', sans-serif;
+  --bg-primary: #f9fafb; /* light neutral background */
+  --card-bg: #ffffff;   /* solid white cards */
+  --color-text: #1a1a1a;
+  --color-muted: #666666;
+  --color-primary: #3b82f6; /* blue-500 */
+  --color-success: #10b981; /* green-500 */
+  --color-warning: #f59e0b; /* amber-500 */
+  --shadow-elevate: 0 4px 12px rgba(0,0,0,0.08);
+  --transition: all 0.3s ease;
+}
+
+body {
+  font-family: var(--font-family);
+  background: var(--bg-primary);
+  color: var(--color-text);
+  margin: 0;
+  padding: 0;
+}
+
+.admin-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+/* Header */
+.admin-header {
+  margin-bottom: 48px;
+  text-align: center;
+}
+
+.admin-header h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: var(--color-primary);
+}
+
+.admin-header p {
+  font-size: 1.1rem;
+  color: var(--color-muted);
+}
+
+/* Error banner */
+.admin-error {
+  background: #fee;
+  color: #c33;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  border-left: 4px solid #c33;
+}
+
+/* Analytics Cards */
+.admin-analytics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 24px;
+  margin-bottom: 40px;
+}
+
+.analytics-card {
+  background: var(--card-bg);
+  border-radius: 12px;
+  box-shadow: var(--shadow-elevate);
+  padding: 30px;
+  text-align: center;
+  transition: var(--transition);
+}
+
+.analytics-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+}
+
+.analytics-value {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-bottom: 0.5rem;
+}
+
+.analytics-label {
+  font-size: 0.95rem;
+  color: var(--color-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Admin Sections */
+.admin-section {
+  background: var(--card-bg);
+  padding: 30px;
+  border-radius: 12px;
+  margin-bottom: 32px;
+  box-shadow: var(--shadow-elevate);
+}
+
+.admin-section h2 {
+  font-size: 1.6rem;
+  margin-bottom: 1rem;
+  color: var(--color-primary);
+}
+
+/* Role List */
+.role-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.role-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #e0e0e0;
+  font-size: 0.95rem;
+  color: var(--color-text);
+}
+
+.role-count {
+  background: var(--color-primary);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+/* Responses Table */
+.responses-table {
+  overflow-x: auto;
+}
+
+.responses-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.responses-table thead {
+  background: #f0f0f0;
+}
+
+.responses-table th {
+  padding: 14px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--color-text);
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.responses-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #eaeaea;
+  font-size: 0.9rem;
+  color: var(--color-text);
+}
+
+.responses-table tbody tr:hover {
+  background-color: #fafafa;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.status-submitted {
+  background-color: var(--color-success);
+  color: white;
+}
+
+.status-draft {
+  background-color: var(--color-warning);
+  color: white;
+}
+
+/* Download Button */
+.admin-btn-download {
+  background: var(--color-primary);
+  color: white;
+  padding: 12px 30px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  box-shadow: 0 4px 12px rgba(59,130,246,0.3);
+}
+
+.admin-btn-download:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(59,130,246,0.4);
+}
+
+.admin-btn-download:active {
+  transform: translateY(0);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .admin-page {
+    padding: 20px 15px;
+  }
+  .admin-header h1 {
+    font-size: 2rem;
+  }
+  .admin-analytics {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-analytics {
+    grid-template-columns: 1fr;
+  }
+  .responses-table th,
+  .responses-table td {
+    padding: 8px;
+    font-size: 0.8rem;
+  }
+}

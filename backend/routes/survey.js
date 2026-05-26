@@ -1,13 +1,31 @@
 import express from 'express';
 import Survey from '../models/Survey.js';
 import { verifyToken } from '../middleware/auth.js';
+import { localDb } from '../localDb.js';
 
-const router = express.Router();
+const router = Router();
+
+function Router() {
+  return express.Router();
+}
 
 // Save/update survey draft
 router.post('/save', verifyToken, async (req, res) => {
   try {
     const { respondent, answers, confirmed, confirmedSnapshot, skipped, progress } = req.body;
+
+    const isConnected = req.app.locals.mongoConnected();
+    if (!isConnected) {
+      const survey = await localDb.saveSurveyDraft(req.user.username, {
+        respondent,
+        answers,
+        confirmed,
+        confirmedSnapshot,
+        skipped,
+        progress
+      });
+      return res.json({ message: 'Survey saved (offline mode)', surveyId: survey._id });
+    }
 
     let survey = await Survey.findOne({
       'respondent.username': req.user.username,
@@ -15,6 +33,7 @@ router.post('/save', verifyToken, async (req, res) => {
     });
 
     if (survey) {
+      survey.respondent = { ...respondent, username: req.user.username };
       survey.answers = answers;
       survey.confirmed = confirmed;
       survey.confirmedSnapshot = confirmedSnapshot;
@@ -42,6 +61,12 @@ router.post('/save', verifyToken, async (req, res) => {
 // Get draft survey
 router.get('/draft', verifyToken, async (req, res) => {
   try {
+    const isConnected = req.app.locals.mongoConnected();
+    if (!isConnected) {
+      const survey = await localDb.getSurveyDraft(req.user.username);
+      return res.json(survey || {});
+    }
+
     const survey = await Survey.findOne({
       'respondent.username': req.user.username,
       status: 'draft'
@@ -56,6 +81,13 @@ router.get('/draft', verifyToken, async (req, res) => {
 router.post('/submit', verifyToken, async (req, res) => {
   try {
     const { surveyId } = req.body;
+
+    const isConnected = req.app.locals.mongoConnected();
+    if (!isConnected) {
+      const survey = await localDb.submitSurvey(surveyId);
+      return res.json({ message: 'Survey submitted successfully (offline mode)', survey });
+    }
+
     const survey = await Survey.findByIdAndUpdate(
       surveyId,
       { status: 'submitted', submittedAt: new Date() },
@@ -70,6 +102,12 @@ router.post('/submit', verifyToken, async (req, res) => {
 // Get submitted surveys (for admin/analytics)
 router.get('/all', verifyToken, async (req, res) => {
   try {
+    const isConnected = req.app.locals.mongoConnected();
+    if (!isConnected) {
+      const surveys = await localDb.getAllSubmittedSurveys();
+      return res.json(surveys);
+    }
+
     const surveys = await Survey.find({ status: 'submitted' });
     res.json(surveys);
   } catch (error) {
@@ -78,3 +116,4 @@ router.get('/all', verifyToken, async (req, res) => {
 });
 
 export default router;
+

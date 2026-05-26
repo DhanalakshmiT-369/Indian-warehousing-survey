@@ -1,5 +1,17 @@
 const API_URL = '/api';
 
+// Helper to safely parse JSON responses
+async function parseJSON(response) {
+  try {
+    const text = await response.text();
+    if (!text) return null;
+    return JSON.parse(text);
+  } catch (error) {
+    console.error('JSON parse error:', error);
+    return null;
+  }
+}
+
 export const apiClient = {
   async login(username, password) {
     const res = await fetch(`${API_URL}/auth/login`, {
@@ -7,11 +19,11 @@ export const apiClient = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password })
     });
+    const data = await parseJSON(res);
     if (!res.ok) {
-      const data = await res.json();
-      throw new Error(data.error || 'Login failed');
+      throw new Error(data?.error || 'Login failed');
     }
-    return res.json();
+    return data;
   },
 
   async saveSurvey(respondent, answers, confirmed, confirmedSnapshot, skipped, progress) {
@@ -24,8 +36,9 @@ export const apiClient = {
       },
       body: JSON.stringify({ respondent, answers, confirmed, confirmedSnapshot, skipped, progress })
     });
-    if (!res.ok) throw new Error('Failed to save survey');
-    return res.json();
+    const data = await parseJSON(res);
+    if (!res.ok) throw new Error(data?.error || 'Failed to save survey');
+    return data;
   },
 
   async getDraft() {
@@ -33,8 +46,9 @@ export const apiClient = {
     const res = await fetch(`${API_URL}/survey/draft`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
-    if (!res.ok) throw new Error('Failed to fetch draft');
-    return res.json();
+    const data = await parseJSON(res);
+    if (!res.ok) throw new Error(data?.error || 'Failed to fetch draft');
+    return data;
   },
 
   async submitSurvey(surveyId) {
@@ -47,8 +61,9 @@ export const apiClient = {
       },
       body: JSON.stringify({ surveyId })
     });
-    if (!res.ok) throw new Error('Failed to submit survey');
-    return res.json();
+    const data = await parseJSON(res);
+    if (!res.ok) throw new Error(data?.error || 'Failed to submit survey');
+    return data;
   }
 };
 

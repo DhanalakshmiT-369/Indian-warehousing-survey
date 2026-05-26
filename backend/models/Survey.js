@@ -19,9 +19,7 @@ const surveySchema = new mongoose.Schema({
     totalQuestions: Number
   },
   status: { type: String, enum: ['draft', 'submitted'], default: 'draft' },
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now },
   submittedAt: Date
-});
+}, { timestamps: true });
 
 export default mongoose.model('Survey', surveySchema);

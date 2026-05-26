@@ -3,7 +3,7 @@ export default function Hero({ onStartSurvey }) {
     <section className="hero" id="home">
       <div className="hero-content">
         <p className="hero-eyebrow">India Warehousing Ecosystem Survey 2026</p>
-        <h1>Capture stakeholder insights for better logistics decisions.</h1>
+        <h1>Capture stakeholder insights for better warehousing decisions.</h1>
         <p>
           A structured survey experience for tracking warehouse priorities,
           investment signals, infrastructure gaps, and future outlook.

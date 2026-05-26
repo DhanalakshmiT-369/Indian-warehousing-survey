@@ -17,6 +17,15 @@ async function seed() {
     console.log('✓ Admin user created (username: admin, password: survey2026)');
   }
 
+  const testUserExists = await User.findOne({ username: 'testuser' });
+  if (testUserExists) {
+    console.log('✓ Test user already exists — nothing to do.');
+  } else {
+    const testUser = new User({ username: 'testuser', password: 'test123' });
+    await testUser.save();
+    console.log('✓ Test user created (username: testuser, password: test123)');
+  }
+
   await mongoose.disconnect();
   console.log('✓ Done.');
 }
