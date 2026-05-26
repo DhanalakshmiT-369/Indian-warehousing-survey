@@ -7,10 +7,12 @@ import './styles/admin.css';
 
 import Navbar from './components/Navbar.jsx';
 import Footer from './components/Footer.jsx';
+import Landing from './pages/Landing.jsx';
 import Home from './pages/Home.jsx';
 import Survey from './pages/Survey.jsx';
 import AdminPage from './pages/AdminPage.jsx';
 import { apiClient } from './api/client.js';
+import { STORAGE_KEY } from './data/questions.js';
 
 const roles = [
   { code: 'WH/3PL', label: 'Warehouse Operators / 3PL Providers' },
@@ -23,6 +25,7 @@ const roles = [
 ];
 
 const routes = {
+  landing: '/',
   credentials: '/credentials',
   main: '/main',
   admin: '/admin',
@@ -33,7 +36,7 @@ const routes = {
 
 function getCurrentRoute() {
   const path = window.location.pathname;
-  return Object.values(routes).includes(path) ? path : routes.credentials;
+  return Object.values(routes).includes(path) ? path : routes.landing;
 }
 
 export default function App() {
@@ -52,7 +55,7 @@ export default function App() {
 
   useEffect(() => {
     if (!Object.values(routes).includes(window.location.pathname)) {
-      window.history.replaceState({}, '', routes.credentials);
+      window.history.replaceState({}, '', routes.landing);
     }
 
     const handlePopState = () => setRoute(getCurrentRoute());
@@ -111,36 +114,38 @@ export default function App() {
         // Fetch existing draft from the database to restore state
         try {
           const draft = await apiClient.getDraft();
-          if (draft && draft.respondent) {
-            setRespondentDetails({
-              name: draft.respondent.name || '',
-              email: draft.respondent.email || '',
-              organization: draft.respondent.organization || '',
-            });
-            if (draft.respondent.role) {
-              const matchingRole = roles.find(r => r.label === draft.respondent.role || r.code === draft.respondent.roleCode);
-              setRole(matchingRole || {
-                label: draft.respondent.role,
-                code: draft.respondent.roleCode || ''
+          if (draft && Object.keys(draft).length > 0) {
+            if (draft.respondent) {
+              setRespondentDetails({
+                name: draft.respondent.name || '',
+                email: draft.respondent.email || '',
+                organization: draft.respondent.organization || '',
               });
+              if (draft.respondent.role) {
+                const matchingRole = roles.find(r => r.label === draft.respondent.role || r.code === draft.respondent.roleCode);
+                setRole(matchingRole || {
+                  label: draft.respondent.role,
+                  code: draft.respondent.roleCode || ''
+                });
+              }
             }
             setShowRoleSelection(true);
-                // Populate localStorage so that when the Survey app starts, it resumes the draft!
-                localStorage.setItem('warehousing_survey_draft', JSON.stringify({
+            // Populate localStorage so that when the Survey app starts, it resumes the draft!
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({
               answers: draft.answers || {},
               confirmed: draft.confirmed || {},
               confirmedSnapshot: draft.confirmedSnapshot || {},
               autofilled: draft.autofilled || {},
               skipped: draft.skipped || {},
-                  currentSectionIdx: draft.progress?.currentSectionIdx || 0,
-                  savedAt: draft.updatedAt ? new Date(draft.updatedAt).getTime() : Date.now()
-                }));
-              }
-            } catch (draftError) {
-              console.error('Failed to load existing draft:', draftError);
-            }
+              currentSectionIdx: draft.progress?.currentSectionIdx || 0,
+              savedAt: draft.updatedAt ? new Date(draft.updatedAt).getTime() : Date.now()
+            }));
+          }
+        } catch (draftError) {
+          console.error('Failed to load existing draft:', draftError);
+        }
 
-            // After successful credential/login, show the main intro (Hero) for non-admin users
+            // After successful credential/login, show the survey start page
             navigate(routes.main);
       }
     } catch (error) {
@@ -161,6 +166,10 @@ export default function App() {
     });
     setShowRoleSelection(true);
   };
+
+  if (route === routes.landing) {
+    return <Landing onGetStarted={() => navigate(routes.credentials)} />;
+  }
 
   if (!credentials || route === routes.credentials) {
     return (
@@ -197,7 +206,7 @@ export default function App() {
                 <h1>Your details</h1>
                 <label>
                   Name
-                  <input name="name" type="text" placeholder="Your full name" required defaultValue={respondentDetails?.name || ''} />
+                  <input name="name" type="text" placeholder="Your full name" defaultValue={respondentDetails?.name || ''} />
                 </label>
                 <label>
                   Email
@@ -247,9 +256,21 @@ export default function App() {
   }
 
   if (route === routes.questions || route === routes.finished) {
+    let hasDraft = false;
+    try {
+      const draftData = localStorage.getItem(STORAGE_KEY);
+      if (draftData) {
+        const draft = JSON.parse(draftData);
+        hasDraft = Object.keys(draft.answers || {}).length > 2;
+      }
+    } catch (e) {
+      console.error('Error checking for draft:', e);
+    }
+    const screen = route === routes.finished ? 'complete' : (hasDraft ? 'welcome' : 'survey');
+
     return (
       <Survey
-        initialScreen={route === routes.finished ? 'complete' : 'survey'}
+        initialScreen={screen}
         onFinish={() => navigate(routes.finished)}
         respondent={{ ...credentials, ...respondentDetails, role: role.label, roleCode: role.code }}
       />

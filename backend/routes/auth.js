@@ -1,6 +1,7 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+import Survey from '../models/Survey.js';
 import { localDb } from '../localDb.js';
 
 const router = express.Router();
@@ -55,7 +56,22 @@ router.post('/login', async (req, res) => {
       }
 
       const token = jwt.sign({ userId: user._id, username }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
-      return res.json({ token, username });
+      // Retrieve offline draft (if any)
+      let draft = null;
+      try {
+        draft = await localDb.getSurveyDraft(username);
+      } catch (e) {
+        console.error('Error fetching offline draft:', e);
+      }
+      // Retrieve all offline surveys for the user (draft + submitted)
+      let surveys = [];
+      try {
+        const all = await localDb.getAllSubmittedSurveys();
+        surveys = all.filter(s => s.respondent?.username === username);
+      } catch (e) {
+        console.error('Error fetching offline surveys:', e);
+      }
+      return res.json({ token, username, draft, surveys });
     }
 
     const user = await User.findOne({ username });
@@ -69,7 +85,22 @@ router.post('/login', async (req, res) => {
     }
 
     const token = jwt.sign({ userId: user._id, username }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
-    res.json({ token, username });
+    // Retrieve user's draft (if any)
+    let draft = null;
+    try {
+      draft = await localDb.getSurveyDraft(username);
+    } catch (e) {
+      console.error('Error fetching offline draft:', e);
+    }
+    // Retrieve all surveys for the user (draft + submitted)
+    let surveys = [];
+    try {
+      const all = await Survey.find({ "respondent.username": username });
+      surveys = all.map(s => s.toObject());
+    } catch (e) {
+      console.error('Error fetching surveys:', e);
+    }
+    return res.json({ token, username, draft, surveys });
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ error: error.message || 'Login failed' });

@@ -115,5 +115,32 @@ router.get('/all', verifyToken, async (req, res) => {
   }
 });
 
-export default router;
+// Save referral contacts
+router.post('/referral', verifyToken, async (req, res) => {
+  try {
+    const { referrals } = req.body;
 
+    const isConnected = req.app.locals.mongoConnected();
+    if (!isConnected) {
+      return res.json({ message: 'Referral saved (offline mode)' });
+    }
+
+    const survey = await Survey.findOne({
+      'respondent.username': req.user.username,
+      status: 'draft'
+    });
+
+    if (survey) {
+      if (!survey.referrals) survey.referrals = [];
+      survey.referrals.push(...referrals);
+      await survey.save();
+      res.json({ message: 'Referrals saved successfully' });
+    } else {
+      res.status(404).json({ error: 'Survey draft not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+export default router;

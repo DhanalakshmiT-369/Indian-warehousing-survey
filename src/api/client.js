@@ -64,6 +64,21 @@ export const apiClient = {
     const data = await parseJSON(res);
     if (!res.ok) throw new Error(data?.error || 'Failed to submit survey');
     return data;
+  },
+
+  async saveReferrals(referrals) {
+    const token = localStorage.getItem('authToken');
+    const res = await fetch(`${API_URL}/survey/referral`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ referrals })
+    });
+    const data = await parseJSON(res);
+    if (!res.ok) throw new Error(data?.error || 'Failed to save referrals');
+    return data;
   }
 };
 

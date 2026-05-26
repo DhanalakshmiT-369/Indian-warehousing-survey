@@ -18,6 +18,12 @@ const surveySchema = new mongoose.Schema({
     totalAnswered: Number,
     totalQuestions: Number
   },
+  referrals: [{
+    name: String,
+    email: String,
+    organization: String,
+    createdAt: { type: Date, default: Date.now }
+  }],
   status: { type: String, enum: ['draft', 'submitted'], default: 'draft' },
   submittedAt: Date
 }, { timestamps: true });

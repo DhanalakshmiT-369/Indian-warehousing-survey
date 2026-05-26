@@ -506,8 +506,79 @@ function RequiredQuestionModal({ data, onClose, onGoToQuestion }) {
 
 /* -- Complete -- */
 function CompleteScreen({ stats, confirmed, confirmedSnapshot, sections, onExport, onRestart, onSubmit }) {
+  const [referrals, setReferrals] = useState([{ name: '', email: '', organization: '', contactNo: '' }]);
+  const [submittingReferrals, setSubmittingReferrals] = useState(false);
+  const [validationErrors, setValidationErrors] = useState({});
   const sectionQuestions = sections.flatMap(section => section.qs);
   const confirmedCount = sectionQuestions.filter(qnum => confirmed[qnum]).length;
+
+  const validateEmail = (email) => {
+    if (!email) return true; // Optional field
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const validateContactNo = (contactNo) => {
+    if (!contactNo) return true; // Optional field
+    const phoneRegex = /^[\d\s+\-()]{10,}$/; // At least 10 digits
+    return phoneRegex.test(contactNo.replace(/\s/g, ''));
+  };
+
+  const updateReferral = (index, field, value) => {
+    const updated = [...referrals];
+    updated[index] = { ...updated[index], [field]: value };
+    setReferrals(updated);
+
+    // Clear error for this field
+    const errorKey = `${index}-${field}`;
+    if (validationErrors[errorKey]) {
+      const newErrors = { ...validationErrors };
+      delete newErrors[errorKey];
+      setValidationErrors(newErrors);
+    }
+  };
+
+  const addReferral = () => {
+    setReferrals([...referrals, { name: '', email: '', organization: '', contactNo: '' }]);
+  };
+
+  const removeReferral = (index) => {
+    setReferrals(referrals.filter((_, i) => i !== index));
+  };
+
+  const submitReferrals = async () => {
+    const filledReferrals = referrals.filter(r => r.name || r.email || r.organization || r.contactNo);
+    const errors = {};
+
+    // Validate filled referrals
+    filledReferrals.forEach((ref, index) => {
+      if (ref.email && !validateEmail(ref.email)) {
+        errors[`${referrals.indexOf(ref)}-email`] = 'Please enter a valid email address';
+      }
+      if (ref.contactNo && !validateContactNo(ref.contactNo)) {
+        errors[`${referrals.indexOf(ref)}-contactNo`] = 'Please enter a valid contact number (at least 10 digits)';
+      }
+    });
+
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      window.__showToast?.('Please fix validation errors', '');
+      return;
+    }
+
+    setSubmittingReferrals(true);
+    try {
+      if (filledReferrals.length > 0) {
+        await apiClient.saveReferrals(filledReferrals);
+        window.__showToast?.('Referrals saved successfully', 'success');
+      }
+      onSubmit();
+    } catch (error) {
+      window.__showToast?.('Error saving referrals: ' + error.message, '');
+      setSubmittingReferrals(false);
+    }
+  };
+
   return (
     <div className="screen-overlay complete-screen-overlay">
       <div className="screen-card complete-card-wide">
@@ -546,9 +617,107 @@ function CompleteScreen({ stats, confirmed, confirmedSnapshot, sections, onExpor
         ) : (
           <p className="complete-summary-empty">No confirmed answers to show. Confirmed responses appear here when you use <strong>Confirm answer</strong> during the survey.</p>
         )}
-        <div className="complete-actions">
+
+        <div className="referral-section" style={{ marginTop: '3rem', padding: '2rem', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', borderRadius: '12px', boxShadow: '0 10px 30px rgba(102, 126, 234, 0.2)' }}>
+          <h2 style={{ fontSize: '1.4rem', marginBottom: '0.5rem', color: 'white', fontWeight: 700 }}>Help Us Reach More People</h2>
+          <p style={{ fontSize: '0.95rem', color: 'rgba(255,255,255,0.9)', marginBottom: '2rem', lineHeight: '1.6' }}>
+            Know someone who should also take this survey? Share their contact details and help us improve the quality of this research.
+          </p>
+
+          <div className="referrals-list" style={{ marginBottom: '1.5rem' }}>
+            {referrals.map((ref, index) => (
+              <div key={index} style={{ marginBottom: '1.5rem', padding: '1.5rem', backgroundColor: 'rgba(255,255,255,0.95)', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.3)', boxShadow: '0 4px 15px rgba(0,0,0,0.1)', backdropFilter: 'blur(10px)' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                  <label style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#1f2937', marginBottom: '0.5rem' }}>Name (Optional)</span>
+                    <input
+                      type="text"
+                      placeholder="Contact name"
+                      value={ref.name}
+                      onChange={(e) => updateReferral(index, 'name', e.target.value)}
+                      style={{ padding: '0.7rem', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '0.95rem', transition: 'all 0.3s ease', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}
+                      onFocus={(e) => e.target.style.borderColor = '#667eea'}
+                      onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
+                    />
+                  </label>
+                  <label style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#1f2937', marginBottom: '0.5rem' }}>Email (Optional)</span>
+                    <input
+                      type="email"
+                      placeholder="contact@example.com"
+                      value={ref.email}
+                      onChange={(e) => updateReferral(index, 'email', e.target.value)}
+                      style={{ padding: '0.7rem', border: validationErrors[`${index}-email`] ? '2px solid #ef4444' : '1px solid #e5e7eb', borderRadius: '6px', fontSize: '0.95rem', transition: 'all 0.3s ease', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}
+                      onFocus={(e) => !validationErrors[`${index}-email`] && (e.target.style.borderColor = '#667eea')}
+                      onBlur={(e) => e.target.style.borderColor = validationErrors[`${index}-email`] ? '#ef4444' : '#e5e7eb'}
+                    />
+                    {validationErrors[`${index}-email`] && <span style={{ fontSize: '0.75rem', color: '#ef4444', marginTop: '0.25rem' }}>{validationErrors[`${index}-email`]}</span>}
+                  </label>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                  <label style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#1f2937', marginBottom: '0.5rem' }}>Organization (Optional)</span>
+                    <input
+                      type="text"
+                      placeholder="Company or organization"
+                      value={ref.organization}
+                      onChange={(e) => updateReferral(index, 'organization', e.target.value)}
+                      style={{ padding: '0.7rem', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '0.95rem', transition: 'all 0.3s ease', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}
+                      onFocus={(e) => e.target.style.borderColor = '#667eea'}
+                      onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
+                    />
+                  </label>
+                  <label style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#1f2937', marginBottom: '0.5rem' }}>Contact No (Optional)</span>
+                    <input
+                      type="tel"
+                      placeholder="+91 XXXXX XXXXX"
+                      value={ref.contactNo}
+                      onChange={(e) => updateReferral(index, 'contactNo', e.target.value)}
+                      style={{ padding: '0.7rem', border: validationErrors[`${index}-contactNo`] ? '2px solid #ef4444' : '1px solid #e5e7eb', borderRadius: '6px', fontSize: '0.95rem', transition: 'all 0.3s ease', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}
+                      onFocus={(e) => !validationErrors[`${index}-contactNo`] && (e.target.style.borderColor = '#667eea')}
+                      onBlur={(e) => e.target.style.borderColor = validationErrors[`${index}-contactNo`] ? '#ef4444' : '#e5e7eb'}
+                    />
+                    {validationErrors[`${index}-contactNo`] && <span style={{ fontSize: '0.75rem', color: '#ef4444', marginTop: '0.25rem' }}>{validationErrors[`${index}-contactNo`]}</span>}
+                  </label>
+                </div>
+                {referrals.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeReferral(index)}
+                    style={{ fontSize: '0.85rem', color: '#667eea', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0, fontWeight: 500, transition: 'color 0.2s' }}
+                    onMouseEnter={(e) => e.target.style.color = '#764ba2'}
+                    onMouseLeave={(e) => e.target.style.color = '#667eea'}
+                  >
+                    Remove this contact
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={addReferral}
+            style={{ fontSize: '0.9rem', padding: '0.7rem 1.2rem', backgroundColor: 'rgba(255,255,255,0.2)', color: 'white', border: '1px solid rgba(255,255,255,0.4)', borderRadius: '6px', cursor: 'pointer', marginBottom: '1.5rem', fontWeight: 500, transition: 'all 0.3s ease' }}
+            onMouseEnter={(e) => { e.target.style.backgroundColor = 'rgba(255,255,255,0.3)'; e.target.style.borderColor = 'rgba(255,255,255,0.6)'; }}
+            onMouseLeave={(e) => { e.target.style.backgroundColor = 'rgba(255,255,255,0.2)'; e.target.style.borderColor = 'rgba(255,255,255,0.4)'; }}
+          >
+            + Add another contact
+          </button>
+
+          <div style={{ padding: '1.2rem', backgroundColor: 'rgba(255,255,255,0.15)', borderLeft: '4px solid white', borderRadius: '6px', marginTop: '1.5rem', backdropFilter: 'blur(10px)' }}>
+            <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.95)', margin: 0, lineHeight: '1.6', fontWeight: 500 }}>
+              <strong>🔒 Privacy Assurance:</strong> Any information shared will be kept strictly confidential and used only for the purpose of this survey. Your contacts' privacy and data security are important to us.
+            </p>
+          </div>
+        </div>
+
+        <div className="complete-actions" style={{ marginTop: '2rem' }}>
           <button type="button" className="btn-primary" onClick={onExport}>Download PDF</button>
-          <button type="button" className="btn-secondary" onClick={onSubmit} style={{ marginRight: 8 }}>Submit & Finish</button>
+          <button type="button" className="btn-secondary" onClick={submitReferrals} disabled={submittingReferrals} style={{ marginRight: 8 }}>
+            {submittingReferrals ? 'Saving...' : 'Share Contacts & Finish'}
+          </button>
           <button type="button" className="btn-secondary" onClick={onRestart}>Start over</button>
         </div>
       </div>
